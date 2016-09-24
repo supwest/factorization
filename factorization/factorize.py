@@ -45,4 +45,8 @@ if __name__ == '__main__':
     a = f(n, n)
     n.toarray()
     a.toarray()
+
+
+    cost = sparse.basic.sp_sum(x)
+    T.grad(cost, x)
     '''
