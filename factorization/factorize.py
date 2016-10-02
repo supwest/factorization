@@ -35,7 +35,7 @@ class Factorizer(object):
             m[i] = self.matrix[self.matrix.getrow(i).nonzero()].mean()
         return m
 
-    def factorize(self, num_iter=5, verbose=True):
+    def fit(self, num_iter=5, verbose=True, user_learning_rate=.0001, item_learning_rate=.0001):
         '''
         Uses GD to find the UV decomposition of the matrix
         Input: num_iter (int) number of iterations to complete
@@ -50,7 +50,7 @@ class Factorizer(object):
         cost = T.sum(T.square(X - T.dot(Uu, Vv))[self.non_zeros])
 
         du, dv = theano.grad(cost, [Uu, Vv])
-        train = theano.function(inputs = [X], outputs = cost, updates = ((Uu, Uu-0.0001*du), (Vv, Vv-0.0001*dv)))
+        train = theano.function(inputs = [X], outputs = cost, updates = ((Uu, Uu-user_learning_rate*du), (Vv, Vv-item_learning_rate*dv)))
 
         print "Training"
         for i in range(num_iter):
@@ -84,26 +84,37 @@ class FactorizationMachine(object):
     def __init__(self):
         pass
 
+def make_sparse_matrix(mat_file):
+    '''
+    makes a sparse matrix from a ratings matrix
+    Input: path to numpy array
 
+    array should consist of:
+    userids (ints) in first column
+    item ids (ints) in second column
+    ratings (float or int) in third column
+    '''
 
-if __name__ == '__main__':
-    mat = np.load('matrix.npy')
+    mat = np.load(mat_file)
 
-    users = mat[:,0]-1
-    movies = mat[:,1]-1
+    users = mat[:,0]
+    items = mat[:,1]
     ratings = mat[:,2].astype(float)
 
-    sparse_matrix = sps.coo_matrix((ratings, (users, movies)), shape=(np.unique(users).shape[0], movies.shape[0])).tocsr()
+    if users.min() != 0:
+        users = users - users.min()
+    if items.min() != 0:
+        items = items - items.min()
 
-    fact = Factorizer(sparse_matrix)
+    s = sps.coo_matrix((ratings, (users, items)), shape=(np.unique(users).shape[0], np.unique(items).shape[0])).tocsr()
+
+    return s
+
+if __name__ == '__main__':
+    #sparse_matrix = make_sparse_matrix('matrix.npy')
+
+    #fact = Factorizer(sparse_matrix)
+    m = make_sparse_matrix('matrix.npy')
+    m_fact = Factorizer(m)
+    #m_fact.fit()
     
-    a = np.array([[1, 0, 0], [2, 0, 1], [0, 1, 0]])
-    s = sps.csr_matrix(a)
-    u2 = np.random.rand(3,3)
-    d = (s-u2)
-    d2 = np.array(d[s.nonzero()])[0]
-    row = s.nonzero()[0]
-    col = s.nonzero()[1]
-    e = sps.csr_matrix((d2, (row, col)), shape=s.shape)
-
-
