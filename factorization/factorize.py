@@ -21,8 +21,6 @@ class Factorizer(object):
         self.U = np.random.rand(self.matrix.shape[0], self.factors)
         self.V = np.random.rand(self.factors, self.matrix.shape[1])
         self.non_zeros = self.matrix.nonzero()
-        self.mean_rating = self.matrix[self.non_zeros].mean()
-        self.user_means = self._get_user_means()
 
     def _get_user_means(self):
         '''
@@ -35,19 +33,18 @@ class Factorizer(object):
             m[i] = self.matrix[self.matrix.getrow(i).nonzero()].mean()
         return m
 
-    def fit(self, num_iter=5, verbose=True, user_learning_rate=.0001, item_learning_rate=.0001):
+    def fit(self, num_iter=5, user_learning_rate=.0001, item_learning_rate=.0001, verbose=True):
         '''
         Uses GD to find the UV decomposition of the matrix
         Input: num_iter (int) number of iterations to complete
                verbose (bool) whether to print iteration and error
         Output: none
         '''
-
         X = T.fmatrix('X')
         Uu = theano.shared(self.U)
         Vv = theano.shared(self.V)
 
-        cost = T.sum(T.square(X - T.dot(Uu, Vv))[self.non_zeros])
+        cost =  T.sum(T.square(X - T.dot(Uu, Vv))[self.non_zeros])
 
         du, dv = theano.grad(cost, [Uu, Vv])
         train = theano.function(inputs = [X], outputs = cost, updates = ((Uu, Uu-user_learning_rate*du), (Vv, Vv-item_learning_rate*dv)))
@@ -115,6 +112,6 @@ if __name__ == '__main__':
 
     #fact = Factorizer(sparse_matrix)
     m = make_sparse_matrix('matrix.npy')
-    m_fact = Factorizer(m)
+    m_fact = Factorizer(m, num_factors=10)
     #m_fact.fit()
     
