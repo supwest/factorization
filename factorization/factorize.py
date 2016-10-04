@@ -111,7 +111,8 @@ if __name__ == '__main__':
     #sparse_matrix = make_sparse_matrix('matrix.npy')
 
     #fact = Factorizer(sparse_matrix)
-    m = make_sparse_matrix('matrix.npy')
+    #m = make_sparse_matrix('matrix.npy')
+    m = make_sparse_matrix('small.npy')
     m_fact = Factorizer(m, num_factors=10)
     #m_fact.fit()
     
