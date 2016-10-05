@@ -21,6 +21,7 @@ class Factorizer(object):
         self.U = np.random.rand(self.matrix.shape[0], self.factors)
         self.V = np.random.rand(self.factors, self.matrix.shape[1])
         self.non_zeros = self.matrix.nonzero()
+        self.bias = np.random.rand()
 
     def _get_user_means(self):
         '''
@@ -37,6 +38,8 @@ class Factorizer(object):
         '''
         Uses GD to find the UV decomposition of the matrix
         Input: num_iter (int) number of iterations to complete
+               user_learning_rate (float) learning rate for U
+               item_learning_rate (float) learning rate for V
                verbose (bool) whether to print iteration and error
         Output: none
         '''
@@ -58,6 +61,48 @@ class Factorizer(object):
         self.U = Uu.get_value()
         self.V = Vv.get_value()
         
+    
+    def fit_funk_svd(self, num_iter=1, fresh_start=False):
+        '''
+        use alternating least squares to find U and V
+        Inputs: 
+            num_iter (int) number of iterations
+            fresh_start (bool) if True, initialize U and V as random matrices
+        Output:
+            None
+
+        '''
+        n_users = self.matrix.shape[0]
+        n_items = self.matrix.shape[1]
+        if fresh_start:
+            self.U = np.random.rand(n_users, self.factors)
+            self.V = np.random.rand(self.factors, n_items)
+        #bias = np.random.rand()
+        #w_i = np.random.rand(n_users)
+        #w_j = np.random.rand(n_items)
+        for iteration in xrange(num_iter):
+            print "Iteration {}".format(iteration+1)
+
+            #for u in xrange(n_users):
+            #     self.U[u] = sps.linalg.lsqr(self.V.T, self.matrix[u].T)
+            # for v in xrange(n_users):
+            #     self.V[v] = sps.linalg.lsqr(self.U, self.matrix.T[v])
+            for i in xrange(n_users):
+                print "user {}".format(i+1)
+                for j in xrange(n_items):
+                    if self.matrix[i,j] > 0:
+                        pred = self.bias + np.dot(self.U[i, :], self.V[:,j])
+                        #print pred
+                        err = self.matrix[i, j] - pred
+                        #print err
+                        for k in xrange(self.factors):
+                            self.U[i,k] += 0.001*(2*err*self.V[k,j])
+                            self.V[k,j] = self.V[k,j] + 0.001*(2*err*self.U[i,k])
+                self.bias = self.bias + 0.1*err
+                            
+                            
+
+
 
     def _print_error(self, Uu, Vv):
         '''
@@ -111,8 +156,8 @@ if __name__ == '__main__':
     #sparse_matrix = make_sparse_matrix('matrix.npy')
 
     #fact = Factorizer(sparse_matrix)
-    #m = make_sparse_matrix('matrix.npy')
-    m = make_sparse_matrix('small.npy')
+    m = make_sparse_matrix('matrix.npy')
+    #m = make_sparse_matrix('small.npy')
     m_fact = Factorizer(m, num_factors=10)
     #m_fact.fit()
     
