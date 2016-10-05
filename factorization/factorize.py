@@ -22,6 +22,7 @@ class Factorizer(object):
         self.V = np.random.rand(self.factors, self.matrix.shape[1])
         self.non_zeros = self.matrix.nonzero()
         self.bias = np.random.rand()
+        self.fitted = False
 
     def _get_user_means(self):
         '''
@@ -44,22 +45,27 @@ class Factorizer(object):
         Output: none
         '''
         X = T.fmatrix('X')
+        X_s = sparse.csr_matrix('Xs')
         Uu = theano.shared(self.U)
         Vv = theano.shared(self.V)
-
-        cost =  T.sum(T.square(X - T.dot(Uu, Vv))[self.non_zeros])
-
+        #Bb = theano.shared(self.bias)
+        cost =  T.sum(T.square((X - T.dot(Uu, Vv))[self.non_zeros]))
+        #cost_s = Bb + sparse.sp_sum(sparse.sqr(sparse.csr_from_dense(X_s - T.dot(Uu, Vv))))
         du, dv = theano.grad(cost, [Uu, Vv])
+        #du, dv, db = theano.grad(cost, [Uu, Vv, Bb])
         train = theano.function(inputs = [X], outputs = cost, updates = ((Uu, Uu-user_learning_rate*du), (Vv, Vv-item_learning_rate*dv)))
+        #train = theano.function(inputs = [X], outputs = cost, updates = ((Uu, Uu-user_learning_rate*du), (Vv, Vv-item_learning_rate*dv), (Bb, Bb-0.0001*db)))
 
         print "Training"
         for i in range(num_iter):
             train(self.matrix.toarray().astype('float32'))
+            #train(self.matrix)
             if verbose:
                 print "Iteration {0} of {1}".format(i+1, num_iter)
                 self._print_error(Uu, Vv) 
         self.U = Uu.get_value()
         self.V = Vv.get_value()
+        self.fitted = True
         
     
     def fit_funk_svd(self, num_iter=1, fresh_start=False):
@@ -101,7 +107,31 @@ class Factorizer(object):
                 self.bias = self.bias + 0.1*err
                             
                             
+    def predict_one(self, userid):
+        '''
+        returns predictions for one user
+        
+        Input: userid (int) id of user to provide predictions for
+        Output: numpy array of predicted ratings
+        '''
+        if not self.fitted:
+            print "Warning: fit has not been called. Predictions will be random"
 
+        return np.dot(self.U[userid], self.V)
+
+    def recommend_n(self, userid, n=10):
+        '''
+        recommend n items for one user
+
+        Input: 
+            userid (int) id of user to provide recommendations for
+            n (int) number of items to recommend, default 10    
+        Output:
+            numpy array of indexes of top n items
+        '''
+        if not self.fitted:
+            print "Warning: fit has not been called. Recommendations will be random"
+        return np.argsort(self.predict_one(userid))[::-1][:n]
 
 
     def _print_error(self, Uu, Vv):
