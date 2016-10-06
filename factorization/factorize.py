@@ -21,7 +21,7 @@ class Factorizer(object):
         self.U = np.random.rand(self.matrix.shape[0], self.factors)
         self.V = np.random.rand(self.factors, self.matrix.shape[1])
         self.non_zeros = self.matrix.nonzero()
-        self.bias = np.random.rand()
+        self.bias = self.matrix[self.non_zeros].mean()
         self.fitted = False
 
     def _get_user_means(self):
@@ -44,27 +44,32 @@ class Factorizer(object):
                verbose (bool) whether to print iteration and error
         Output: none
         '''
-        X = T.fmatrix('X')
+        X = T.dmatrix('X')
         X_s = sparse.csr_matrix('Xs')
         Uu = theano.shared(self.U)
         Vv = theano.shared(self.V)
-        #Bb = theano.shared(self.bias)
-        cost =  T.sum(T.square((X - T.dot(Uu, Vv))[self.non_zeros]))
-        #cost_s = Bb + sparse.sp_sum(sparse.sqr(sparse.csr_from_dense(X_s - T.dot(Uu, Vv))))
-        du, dv = theano.grad(cost, [Uu, Vv])
+        Bb = theano.shared(self.bias)
+        #cost =  T.sum(T.square((X - T.dot(Uu, Vv))[self.non_zeros])) + T.sum(T.square(Uu)) + T.sum(T.square(Vv))
+        cost = T.sum(T.square((X[self.non_zeros] - T.dot(Uu, Vv)[self.non_zeros]))) + .5*T.sum(T.square(Uu)) + .5*T.sum(T.square(Vv))
+        #diff = sparse.sub(X_s, sparse.csr_from_dense(T.dot(Uu, Vv)))
+        #d2 = sparse.structured_pow(diff, 2.)
+        #cost = sparse.sp_sum(d2) + sparse.sp_sum(sparse.structured_pow(sparse.csr_from_dense(Uu), 2.))
+        du, dv = T.grad(cost, [Uu, Vv])
         #du, dv, db = theano.grad(cost, [Uu, Vv, Bb])
         train = theano.function(inputs = [X], outputs = cost, updates = ((Uu, Uu-user_learning_rate*du), (Vv, Vv-item_learning_rate*dv)))
-        #train = theano.function(inputs = [X], outputs = cost, updates = ((Uu, Uu-user_learning_rate*du), (Vv, Vv-item_learning_rate*dv), (Bb, Bb-0.0001*db)))
+        #train = theano.function(inputs = [X], outputs = cost, updates = ((Uu, Uu-user_learning_rate*du), (Vv, Vv-item_learning_rate*dv), (Bb, Bb-0.00001*db)))
 
         print "Training"
         for i in range(num_iter):
             train(self.matrix.toarray().astype('float32'))
+            #print cost.eval()
             #train(self.matrix)
             if verbose:
                 print "Iteration {0} of {1}".format(i+1, num_iter)
                 self._print_error(Uu, Vv) 
         self.U = Uu.get_value()
         self.V = Vv.get_value()
+        self.bias = Bb.get_value()
         self.fitted = True
         
     
@@ -93,18 +98,19 @@ class Factorizer(object):
             #     self.U[u] = sps.linalg.lsqr(self.V.T, self.matrix[u].T)
             # for v in xrange(n_users):
             #     self.V[v] = sps.linalg.lsqr(self.U, self.matrix.T[v])
-            for i in xrange(n_users):
-                print "user {}".format(i+1)
-                for j in xrange(n_items):
-                    if self.matrix[i,j] > 0:
-                        pred = self.bias + np.dot(self.U[i, :], self.V[:,j])
-                        #print pred
-                        err = self.matrix[i, j] - pred
-                        #print err
-                        for k in xrange(self.factors):
-                            self.U[i,k] += 0.001*(2*err*self.V[k,j])
-                            self.V[k,j] = self.V[k,j] + 0.001*(2*err*self.U[i,k])
-                self.bias = self.bias + 0.1*err
+            #for i in xrange(n_users):
+            #    print "user {}".format(i+1)
+            #    for j in xrange(n_items):
+            #        if self.matrix[i,j] > 0:
+            #            pred = self.bias + np.dot(self.U[i, :], self.V[:,j])
+            #            #print pred
+            #            err = self.matrix[i, j] - pred
+            #            #print err
+            #            for k in xrange(self.factors):
+            #                self.U[i,k] += 0.001*(2*err*self.V[k,j])
+            #                self.V[k,j] = self.V[k,j] + 0.001*(2*err*self.U[i,k])
+            
+            self.bias = self.bias + 0.1*err
                             
                             
     def predict_one(self, userid):
