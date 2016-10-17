@@ -95,4 +95,9 @@ print r2_score(y_test, preds)
 
 
 
+'''
+opt = GradientDescentOptimizer(learning_rate=0.1)
+opt_op=opt.minimize(cost, var_list=<list of variables>)
 
+opt_op.run()
+'''
