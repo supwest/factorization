@@ -6,7 +6,7 @@ from sklearn.metrics import r2_score
 
 
 def get_data():
-    df = pd.read_csv("/home/cully/returnpath/interview_data.csv").drop('id', axis=1).dropna()
+    df = pd.read_csv("/home/cully/git/rp/interview_data.csv").drop('id', axis=1).dropna()
     df.columns = ['_'.join(x.lower().split('-')) for x in df.columns]
     return df
 
@@ -76,7 +76,7 @@ mb_idlesub = tf.contrib.layers.real_valued_column('mb_idlesub')
 
 model = tf.contrib.learn.LinearRegressor(feature_columns=[from_domain_hash, domain_extension, day, campaign_size, unique_user_cnt, avg_domain_read_rate, avg_domain_inbox_rate, avg_user_avg_read_rate, avg_user_domain_avg_read_rate, mb_superuser, mb_engper, mb_supersub, mb_engsec, mb_inper, mb_insec, mb_unengsec, mb_idlesub], model_dir='/home/cully/git/factorization/factorization/models')
 
-model.fit(input_fn=train_input_fn, steps=2000)
+model.fit(input_fn=train_input_fn, steps=2)
 results = model.evaluate(input_fn=test_input_fn, steps=1)
 
 for key in sorted(results):
@@ -102,5 +102,5 @@ opt_op=opt.minimize(cost, var_list=<list of variables>)
 opt_op.run()
 '''
 
-
+w_0 = tf.Variable(tf.random_normal([1])
 
