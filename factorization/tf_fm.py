@@ -7,6 +7,8 @@ from sklearn.metrics import r2_score
 
 def get_data():
     df = pd.read_csv("/home/cully/git/rp/interview_data.csv").drop('id', axis=1).dropna()
+
+   # df = pd.read_csv("/home/cully/git/rp/interview_data.csv").drop('id', axis=1).dropna()
     df.columns = ['_'.join(x.lower().split('-')) for x in df.columns]
     return df
 
@@ -101,6 +103,9 @@ opt_op=opt.minimize(cost, var_list=<list of variables>)
 
 opt_op.run()
 '''
+k = 5
 
-w_0 = tf.Variable(tf.random_normal([1])
+num_obs, num_vars = df.shape
+
+U = tf.Variable(tf.random_normal([num_obs, k])
 
