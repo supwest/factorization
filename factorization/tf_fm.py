@@ -107,5 +107,4 @@ k = 5
 
 num_obs, num_vars = df.shape
 
-U = tf.Variable(tf.random_normal([num_obs, k])
-
+U = tf.Variable(tf.random_normal([num_obs, k]))
