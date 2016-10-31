@@ -45,12 +45,27 @@ def parse_item_data():
             
     return item_dict
 
+def parse_user_data():
+    filename='/home/cully/Documents/galvanize/recommendation-systems/data/u.user'
+    user_dict={}
+    with open(filename, 'r') as f:
+        for line in f:
+            d = line.strip().split('|')
+            user_dict[d[0]] = {'age':d[1], 'gender':d[2], 'occupation':d[3], 'zip_code':d[4]}
+    return user_dict
+
+
 def combine_item_data(data, item_data):
     for row in data:
         row.update(item_data[row['movie_id']])
     
     return data
 
+
+def combine_user_data(data, user_data):
+     for row in data:
+         row.update(user_data[row['user_id']])
+     return data
 
 
 
@@ -61,7 +76,8 @@ def predict_one_user(model, userid, data, vectorizer, item_data, num_preds=10):
     for movie in unseen_movies:
         feat_dict = {'user_id':userid, 'movie_id':movie}
         feat_dict.update(item_data[feat_dict['movie_id']])
-        lst.append({'user_id':userid, 'movie_id':movie})
+        #lst.append({'user_id':userid, 'movie_id':movie})
+        lst.append(feat_dict)
     new_data = vectorizer.transform(lst)
     preds = model.predict(new_data)
     comb = zip(preds, lst)
@@ -78,15 +94,20 @@ if __name__ == '__main__':
     filename = '/home/cully/Documents/galvanize/recommendation-systems/data/u.data'
     data, y, users, items = load_data(filename)
     train_data, test_data, y_train, y_test = train_test_split(data, y, test_size=.2)
-
     item_data = parse_item_data()
+    user_data = parse_user_data()
+    X_data = combine_item_data(data, item_data)
+    X_data = combine_user_data(X_data, user_data)
+    v = DictVectorizer()
+    v.fit(X_data)
+    X_train, X_test, y_train, y_test = train_test_split(X_data, y, test_size=.2)
     #X_train = train_data
     #X_test = test_data
-    X_train = combine_item_data(train_data, item_data)
-    X_test = combine_item_data(test_data, item_data)
+    #X_train = combine_item_data(train_data, item_data)
+    #X_test = combine_item_data(test_data, item_data)
 
-    v = DictVectorizer()
-    X_train_trans = v.fit_transform(X_train)
+    #v = DictVectorizer()
+    X_train_trans = v.transform(X_train)
     X_test_trans = v.transform(X_test)
     fm = pylibfm.FM(num_factors=5, num_iter=10, verbose=True, task='regression', initial_learning_rate=0.001, learning_rate_schedule="optimal")
 
