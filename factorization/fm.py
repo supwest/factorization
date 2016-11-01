@@ -68,8 +68,6 @@ def combine_user_data(data, user_data):
      return data
 
 
-
-
 def predict_one_user(model, userid, data, vectorizer, item_data, num_preds=10):
     unseen_movies = items.difference(user_movies[userid])
     lst = []
@@ -122,4 +120,8 @@ if __name__ == '__main__':
     test_user_id = '1'
 
     one_user_preds = predict_one_user(fm, test_user_id, train_data, v, item_data)
-    
+    genre = []
+    with open('/home/cully/Documents/galvanize/recommendation-systems/data/u.genre') as f:
+        for line in f:
+            genre.append(line)
+
